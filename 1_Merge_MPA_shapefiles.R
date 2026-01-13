@@ -36,7 +36,7 @@ shp_mpa_UK_4 <- st_read(paste0(data.dir,"/United_Kingdom/Figshare_GIS_UK_MPA_FIN
 ### select relevant columns in each layer
 ### change their names according to aminian biquet
 ### add designation
-### Merge the shapefile by rows
+### Merge shapefiles by rows
 
 shp_mpa_UK <- list(
   MCZ   = shp_mpa_UK_1,
