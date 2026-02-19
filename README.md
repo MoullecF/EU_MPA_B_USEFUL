@@ -26,10 +26,8 @@ The project combines source data from EU, UK, Iceland, and WDPA-derived layers, 
   - EU source data (Aminian-Biquet et al. 2024), DOI: [10.1016/j.dib.2024.111177](https://doi.org/10.1016/j.dib.2024.111177)
   - UK source data (Figshare package), DOI: [10.6084/m9.figshare.29901479](https://doi.org/10.6084/m9.figshare.29901479)
   - Iceland revised protection layer
-  - WDPA-based Albania and Greenland layers
-  - WDPA reference: UNEP-WCMC and IUCN (2025), *Protected Planet: The World Database on Protected Areas (WDPA) [On-line]*, December 2025, Cambridge, UK: UNEP-WCMC and IUCN. Available at: [www.protectedplanet.net](https://www.protectedplanet.net)
-  - IHO reference: Flanders Marine Institute (2018). *IHO Sea Areas, version 3*. Available online at [marineregions.org](https://www.marineregions.org/). DOI: [10.14284/323](https://doi.org/10.14284/323)
-  - IHO world seas polygons used for marine clipping
+  - WDPA-based Albania and Greenland layers. UNEP-WCMC and IUCN (2025), *Protected Planet: The World Database on Protected Areas (WDPA) [On-line]*, December 2025, Cambridge, UK: UNEP-WCMC and IUCN. Available at: [www.protectedplanet.net](https://www.protectedplanet.net)
+  - IHO world seas polygons used for marine clipping. Flanders Marine Institute (2018). *IHO Sea Areas, version 3*. Available online at [marineregions.org](https://www.marineregions.org/). DOI: [10.14284/323](https://doi.org/10.14284/323)
 
 ## Outputs ![outputs](https://img.shields.io/badge/-outputs-5d4037?style=flat-square)
 - Intermediate merged object: `Outputs/shp_mpa_europe_all.rda`
