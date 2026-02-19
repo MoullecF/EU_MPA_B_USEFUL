@@ -44,7 +44,8 @@ shp_mpa_EU_all <- shp_mpa_EU %>%
     Comment
   ) %>%
   st_make_valid() %>%
-st_transform(crs_target_EU) %>%
+  filter(!st_is_empty(geometry)) %>%
+  st_transform(crs_target_EU) %>%
   st_cast("MULTIPOLYGON", warn = FALSE)
 
 # United Kingdom
@@ -123,7 +124,7 @@ shp_mpa_UK_3 <- shp_mpa_UK_3 %>%
   st_cast("MULTIPOLYGON", warn = FALSE)
 
 shp_mpa_UK_4 <- st_read(paste0(data.dir,"/United_Kingdom/Figshare_GIS_UK_MPA_FINAL/Figshare_GIS_UK_MPA_FINAL/Figshare_UK_MPA_FINAL.gpkg"), layer = "SPA")
-st_geometry(shp_mpa_UK_2) <- "geometry"
+st_geometry(shp_mpa_UK_4) <- "geometry"
 shp_mpa_UK_4 <- shp_mpa_UK_4 %>%
   mutate(Source = "Sim_2025",
          Comment = "Based_on_all_human_activities")%>%
@@ -149,96 +150,129 @@ shp_mpa_UK_4 <- shp_mpa_UK_4 %>%
 shp_mpa_UK_all <- bind_rows(shp_mpa_UK_1, shp_mpa_UK_2, shp_mpa_UK_3, shp_mpa_UK_4)
 
 # Iceland
-all_shp_iceland <- list.files(
-  path = paste0(data.dir,"/selected_OECMs_Iceland/"),
-  pattern = "\\.shp$",
-  full.names = TRUE)
+# all_shp_iceland <- list.files(
+#   path = paste0(data.dir,"/selected_OECMs_Iceland/"),
+#   pattern = "\\.shp$",
+#   full.names = TRUE)
 
-shp_list_iceland <- lapply(all_shp_iceland, function(f) {
-  st_read(f, quiet = TRUE) %>%
-    mutate(
-      Protection_level_all = recode(
-        file_path_sans_ext(basename(f)),
-        protection_lv1 = "fully",
-        protection_lv2 = "highly",
-        protection_lv3 = "lightly",
-        protection_lv4 = "minimally"
-      ),
-      Source         = "Francesco_2025",
-      Country        = "Iceland",
-      Mainregion     = "Arctic waters",
-      Anchoring      = NA,
-      Aquaculture    = NA,
-      Infrastructure = NA,
-      Fishing        = Protection_level_all,
-      Mining         = NA,
-      Dredging       = NA,
-      Nonextractive  = NA,
-      Comment = "Based_on_fishing_restrictions_only"
-    ) %>%
-    select(
-      Source,
-      Name = Name,
-      Country,
-      Mainregion,
-      Anchoring,
-      Aquaculture,
-      Infrastructure,
-      Fishing,
-      Mining,
-      Dredging,
-      Nonextractive,
-      Protection_level_all,
-      Comment) %>%
-    st_make_valid() %>%
-    st_transform(crs_target_EU)
-})
+load("~/Data/MPA_shp_BUSEFUL/protection_Iceland_REVISED/protection_Iceland_REVISED.Rdata")
 
-shp_mpa_Iceland_all <- do.call(rbind, shp_list_iceland)
+shp_mpa_Iceland_all <- d.protection4 %>%
+  mutate(
+    Source         = "Francesco_2025",
+    Country        = "Iceland",
+    Mainregion     = "Arctic waters",
+    Anchoring      = NA,
+    Aquaculture    = NA,
+    Infrastructure = NA,
+    Fishing        = "fully",
+    Mining         = NA,
+    Dredging       = NA,
+    Nonextractive  = NA,
+    Protection_level_all = "fully",
+    Comment = "Based_on_fishing_restrictions_only") %>%
+  select(
+    Source,
+    Name = Name,
+    Country,
+    Mainregion,
+    Anchoring,
+    Aquaculture,
+    Infrastructure,
+    Fishing,
+    Mining,
+    Dredging,
+    Nonextractive,
+    Protection_level_all,
+    Comment) %>%
+  st_make_valid() %>%
+  st_transform(crs_target_EU)
 
-# Fisheries Restricted Areas
-all_shp_FRA <- list.files(
-  path = paste0(data.dir,"/FRAs/"),
-  pattern = "\\.shp$",
-  recursive = TRUE,
-  full.names = TRUE)
+# shp_list_iceland <- lapply(all_shp_iceland, function(f) {
+#   st_read(f, quiet = TRUE) %>%
+#     mutate(
+#       Protection_level_all = recode(
+#         file_path_sans_ext(basename(f)),
+#         protection_lv1 = "fully",
+#         protection_lv2 = "highly",
+#         protection_lv3 = "lightly",
+#         protection_lv4 = "minimally"
+#       ),
+#       Source         = "Francesco_2025",
+#       Country        = "Iceland",
+#       Mainregion     = "Arctic waters",
+#       Anchoring      = NA,
+#       Aquaculture    = NA,
+#       Infrastructure = NA,
+#       Fishing        = Protection_level_all,
+#       Mining         = NA,
+#       Dredging       = NA,
+#       Nonextractive  = NA,
+#       Comment = "Based_on_fishing_restrictions_only"
+#     ) %>%
+#     select(
+#       Source,
+#       Name = Name,
+#       Country,
+#       Mainregion,
+#       Anchoring,
+#       Aquaculture,
+#       Infrastructure,
+#       Fishing,
+#       Mining,
+#       Dredging,
+#       Nonextractive,
+#       Protection_level_all,
+#       Comment) %>%
+#     st_make_valid() %>%
+#     st_transform(crs_target_EU)
+# })
 
-shp_list_FRA <- lapply(all_shp_FRA, function(f) {
-  st_read(f, quiet = TRUE) %>%
-    mutate(
-      Source         = "Walter_2025",
-      Name           = basename(dirname(f)),
-      Country        = NA,
-      Mainregion     = "Mediterranean Sea",
-      Anchoring      = NA,
-      Aquaculture    = NA,
-      Infrastructure = NA,
-      Fishing        = "fully",
-      Mining         = NA,
-      Dredging       = NA,
-      Nonextractive  = NA,
-      Protection_level_all = "fully",
-      Comment = "Based_on_FRA_restrictions_only"
-    ) %>%
-    select(
-      Source,
-      Name,
-      Country,
-      Mainregion,
-      Anchoring,
-      Aquaculture,
-      Infrastructure,
-      Fishing,
-      Mining,
-      Dredging,
-      Nonextractive,
-      Protection_level_all,
-      Comment) %>%
-    st_make_valid() %>%
-    st_transform(crs_target_EU)
-})
+#shp_mpa_Iceland_all <- do.call(rbind, shp_list_iceland)
 
-shp_mpa_FRA_all <- do.call(rbind, shp_list_FRA)
+# # Fisheries Restricted Areas
+# all_shp_FRA <- list.files(
+#   path = paste0(data.dir,"/FRAs/"),
+#   pattern = "\\.shp$",
+#   recursive = TRUE,
+#   full.names = TRUE)
+# 
+# shp_list_FRA <- lapply(all_shp_FRA, function(f) {
+#   st_read(f, quiet = TRUE) %>%
+#     mutate(
+#       Source         = "Walter_2025",
+#       Name           = basename(dirname(f)),
+#       Country        = NA,
+#       Mainregion     = "Mediterranean Sea",
+#       Anchoring      = NA,
+#       Aquaculture    = NA,
+#       Infrastructure = NA,
+#       Fishing        = "fully",
+#       Mining         = NA,
+#       Dredging       = NA,
+#       Nonextractive  = NA,
+#       Protection_level_all = "fully",
+#       Comment = "Based_on_FRA_restrictions_only"
+#     ) %>%
+#     select(
+#       Source,
+#       Name,
+#       Country,
+#       Mainregion,
+#       Anchoring,
+#       Aquaculture,
+#       Infrastructure,
+#       Fishing,
+#       Mining,
+#       Dredging,
+#       Nonextractive,
+#       Protection_level_all,
+#       Comment) %>%
+#     st_make_valid() %>%
+#     st_transform(crs_target_EU)
+# })
+# 
+# shp_mpa_FRA_all <- do.call(rbind, shp_list_FRA)
 
 
 # MPA Albania
@@ -255,7 +289,7 @@ shp_mpa_Albania <- st_read(paste0(data.dir,"/Karaburun-Sazan Marine National Par
     Mining         = NA,
     Dredging       = NA,
     Nonextractive  = NA,
-    Protection_level_all = "unclassified",
+    Protection_level_all = "lightly",
     Comment = "Based_on_nothing"
   ) %>%
   select(
@@ -310,6 +344,12 @@ shp_mpa_Greenland <- st_read(paste0(data.dir,"/WDPA_WDOECM_Jan2026_Public_2065_s
 
 ####
 # Bind all shapefiles
-shp_mpa_all <- bind_rows(shp_mpa_EU_all, shp_mpa_UK_all, shp_mpa_FRA_all, shp_mpa_Iceland_all, shp_mpa_Greenland, shp_mpa_Albania)
-#mapview(shp_mpa_all, zcol = 'Protection_level_all')
+shp_mpa_all <- bind_rows(shp_mpa_EU_all, shp_mpa_UK_all, shp_mpa_Iceland_all, shp_mpa_Greenland, shp_mpa_Albania) # shp_mpa_FRA_all
+shp_mpa_all$Protection_level_all <- factor(
+  shp_mpa_all$Protection_level_all,
+  levels = c("unclassified", "incompatible", "minimally", "lightly", "highly", "fully"),
+  ordered = FALSE)
+
+mapview(shp_mpa_all, zcol = 'Protection_level_all')
+
 save(shp_mpa_all, file = "shp_mpa_europe_all.rda")
