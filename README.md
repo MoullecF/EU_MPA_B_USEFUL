@@ -19,7 +19,7 @@ The project combines source data from EU, UK, Iceland, and WDPA-derived layers, 
 5. **Export shapefile + zip archive** for the selected region (configured in `export_name` inside script 2).
 
 ## Inputs and Data ![data](https://img.shields.io/badge/-data-283593?style=flat-square)
-- **Zenodo record**: [10.5281/zenodo.18701898](https://doi.org/10.5281/zenodo.18701898)
+- **Zenodo record**: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18701898.svg)](https://doi.org/10.5281/zenodo.18701898)
 - **Published archives**:
   - `Inputs.zip`
   - `Outputs.zip`
