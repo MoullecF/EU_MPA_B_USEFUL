@@ -1,355 +1,311 @@
-###
-#Author: Fabien Moullec
-# R version 4.2.2
-# Date : 13/01/2026
-###
+### ------------------------------------------------------------------------
+### Script: Harmonize and merge European MPA shapefiles
+### ------------------------------------------------------------------------
 
-# MPA database comes from :
-#https://www-science-org.ezpum.scdi-montpellier.fr/doi/10.1126/science.abf0861
-#https://www.sciencedirect.com/science/article/pii/S2352340924011399#refdata001
+### ------------------------------------------------------------------------
+### 1) Setup
+### ------------------------------------------------------------------------
 
-#Load libraries
 library(readxl)
 library(sf)
-library(tools)
 library(dplyr)
-library(mapview)
 
 rm(list = ls())
 gc()
-data.dir <- "C:/Users/fabie/Documents/Data/MPA_shp_BUSEFUL"
 
-### Import MPA databases
-# Aminian Biquet et al. 2024
-db_mpa_EU <- read_excel(paste0(data.dir,"/Aminian_Biquet_2024_EU/Fulldatabase.xlsx"))
-shp_mpa_EU <- st_read(paste0(data.dir,"/Aminian_Biquet_2024_EU/FulldatabaseSHP.shp"))
-crs_target_EU <- st_crs(shp_mpa_EU)
-shp_mpa_EU_all <- shp_mpa_EU %>% 
-  inner_join(db_mpa_EU, by = "idMPAzone") %>%
-  mutate(Source = "Aminian_Biquet_2024",
-         Comment = "Based_on_all_human_activities") %>%
-  select(
-    Source,
-    Name        = name.x,
-    Country     = country.x,
-    Mainregion = mainregion,
-    Anchoring   = anchoring_PL1,
-    Aquaculture = aquaculture_PL1,
-    Infrastructure = infrastructure_PL1,
-    Fishing     = fishing_PL1,
-    Mining      = mining_PL1,
-    Dredging    = dredginganddumping_PL1,
-    Nonextractive = nonextractive_PL1,
-    Protection_level_all = PLallactivities1,
-    Comment
+### ------------------------------------------------------------------------
+### 2) Helper functions and paths
+### ------------------------------------------------------------------------
+
+# Apply shared geometry cleanup steps across sources.
+finalize_geometry <- function(data, crs_target, cast_multipolygon = FALSE, drop_empty = FALSE) {
+  output <- data %>%
+    st_make_valid()
+
+  if (drop_empty) {
+    output <- output %>%
+      filter(!st_is_empty(.data$geometry))
+  }
+
+  output <- output %>%
+    st_transform(crs_target)
+
+  if (cast_multipolygon) {
+    output <- output %>%
+      st_cast("MULTIPOLYGON", warn = FALSE)
+  }
+
+  output
+}
+
+uk_gpkg_path <- "./Inputs/United_Kingdom/Figshare_GIS_UK_MPA_FINAL/Figshare_GIS_UK_MPA_FINAL/Figshare_UK_MPA_FINAL.gpkg"
+output_rda_path <- "./Outputs/shp_mpa_europe_all.rda"
+
+protection_levels <- c(
+  "unclassified",
+  "incompatible",
+  "minimally",
+  "lightly",
+  "highly",
+  "fully"
+)
+
+# Read one UK layer and standardize fields to the common output schema.
+read_uk_layer <- function(layer_name, crs_target, use_sac_schema = FALSE) {
+  uk_layer <- st_read(uk_gpkg_path, layer = layer_name)
+  st_geometry(uk_layer) <- "geometry"
+
+  if (use_sac_schema) {
+    uk_layer <- uk_layer %>%
+      mutate(
+        Source = "Sim_2025",
+        Country = NA,
+        Mainregion = NA,
+        Comment = "Based_on_all_human_activities"
+      ) %>%
+      select(
+        Source = .data$Source,
+        Name = .data$name,
+        Country = .data$Country,
+        Mainregion = .data$Mainregion,
+        Anchoring = .data$pl_anchori,
+        Aquaculture = .data$pl_aquacul,
+        Infrastructure = .data$pl_infrast,
+        Fishing = .data$pl_fishing,
+        Mining = .data$pl_mining,
+        Dredging = .data$pl_dredgin,
+        Nonextractive = .data$pl_nonextr,
+        Protection_level_all = .data$pl_overall,
+        Comment = .data$Comment
+      )
+  } else {
+    uk_layer <- uk_layer %>%
+      mutate(
+        Source = "Sim_2025",
+        Comment = "Based_on_all_human_activities"
+      ) %>%
+      select(
+        Source = .data$Source,
+        Name = .data$NAME,
+        Country = .data$country,
+        Mainregion = .data$searegions,
+        Anchoring = .data$mpaguide_a,
+        Aquaculture = .data$mpaguide_1,
+        Infrastructure = .data$mpaguide_i,
+        Fishing = .data$mpaguide_f,
+        Mining = .data$mpaguide_m,
+        Dredging = .data$mpaguide_d,
+        Nonextractive = .data$mpaguide_n,
+        Protection_level_all = .data$mpaguide_o,
+        Comment = .data$Comment
+      )
+  }
+
+  finalize_geometry(
+    data = uk_layer,
+    crs_target = crs_target,
+    cast_multipolygon = TRUE,
+    drop_empty = FALSE
+  )
+}
+
+### ------------------------------------------------------------------------
+### 3) Import and standardize each MPA source
+### ------------------------------------------------------------------------
+
+# Aminian Biquet et al. 2024 (EU)
+# Source: https://www.sciencedirect.com/science/article/pii/S2352340924011399#refdata001
+db_mpa_eu <- read_excel("./Inputs/Aminian_Biquet_2024_EU/Fulldatabase.xlsx")
+shp_mpa_eu <- st_read("./Inputs/Aminian_Biquet_2024_EU/FulldatabaseSHP.shp")
+crs_target_eu <- st_crs(shp_mpa_eu)
+
+shp_mpa_eu_all <- shp_mpa_eu %>%
+  inner_join(db_mpa_eu, by = "idMPAzone") %>%
+  mutate(
+    Source = "Aminian_Biquet_2024",
+    Comment = "Based_on_all_human_activities"
   ) %>%
-  st_make_valid() %>%
-  filter(!st_is_empty(geometry)) %>%
-  st_transform(crs_target_EU) %>%
-  st_cast("MULTIPOLYGON", warn = FALSE)
-
-# United Kingdom
-shp_mpa_UK_1 <- st_read(paste0(data.dir,"/United_Kingdom/Figshare_GIS_UK_MPA_FINAL/Figshare_GIS_UK_MPA_FINAL/Figshare_UK_MPA_FINAL.gpkg"), layer = "MCZ")
-st_geometry(shp_mpa_UK_1) <- "geometry"
-shp_mpa_UK_1 <- shp_mpa_UK_1 %>%
-  mutate(Source = "Sim_2025",
-         Comment = "Based_on_all_human_activities")%>%
   select(
-    Source,
-    Name        = NAME,
-    Country     = country,
-    Mainregion = searegions,
-    Anchoring   = mpaguide_a,
-    Aquaculture = mpaguide_1,
-    Infrastructure = mpaguide_i,
-    Fishing     = mpaguide_f,
-    Mining      = mpaguide_m,
-    Dredging    = mpaguide_d,
-    Nonextractive = mpaguide_n,
-    Protection_level_all = mpaguide_o,
-    Comment
+    Source = .data$Source,
+    Name = .data$name.x,
+    Country = .data$country.x,
+    Mainregion = .data$mainregion,
+    Anchoring = .data$anchoring_PL1,
+    Aquaculture = .data$aquaculture_PL1,
+    Infrastructure = .data$infrastructure_PL1,
+    Fishing = .data$fishing_PL1,
+    Mining = .data$mining_PL1,
+    Dredging = .data$dredginganddumping_PL1,
+    Nonextractive = .data$nonextractive_PL1,
+    Protection_level_all = .data$PLallactivities1,
+    Comment = .data$Comment
   ) %>%
-  st_make_valid() %>%
-  st_transform(crs_target_EU) %>%
-  st_cast("MULTIPOLYGON", warn = FALSE)
+  finalize_geometry(
+    crs_target = crs_target_eu,
+    cast_multipolygon = TRUE,
+    drop_empty = TRUE
+  )
 
-shp_mpa_UK_2 <- st_read(paste0(data.dir,"/United_Kingdom/Figshare_GIS_UK_MPA_FINAL/Figshare_GIS_UK_MPA_FINAL/Figshare_UK_MPA_FINAL.gpkg"), layer = "NCMPA")
-st_geometry(shp_mpa_UK_2) <- "geometry"
-shp_mpa_UK_2 <- shp_mpa_UK_2 %>%
-  mutate(Source = "Sim_2025",
-         Comment = "Based_on_all_human_activities")%>%
-  select(
-    Source,
-    Name        = NAME,
-    Country     = country,
-    Mainregion = searegions,
-    Anchoring   = mpaguide_a,
-    Aquaculture = mpaguide_1,
-    Infrastructure = mpaguide_i,
-    Fishing     = mpaguide_f,
-    Mining      = mpaguide_m,
-    Dredging    = mpaguide_d,
-    Nonextractive = mpaguide_n,
-    Protection_level_all = mpaguide_o,
-    Comment
-  ) %>%
-  st_make_valid() %>%
-  st_transform(crs_target_EU) %>%
-  st_cast("MULTIPOLYGON", warn = FALSE)
+# United Kingdom (MCZ, NCMPA, SAC, SPA)
+# Source: Elsa Sim (2025) Regulations of Human Activities & Protection Levels in Marine Protected Areas of the United Kingdom.
+# https://doi.org/10.6084/m9.figshare.29901479
+uk_layers <- list(
+  list(layer = "MCZ", use_sac_schema = FALSE),
+  list(layer = "NCMPA", use_sac_schema = FALSE),
+  list(layer = "SAC", use_sac_schema = TRUE),
+  list(layer = "SPA", use_sac_schema = FALSE)
+)
 
-shp_mpa_UK_3 <- st_read(paste0(data.dir,"/United_Kingdom/Figshare_GIS_UK_MPA_FINAL/Figshare_GIS_UK_MPA_FINAL/Figshare_UK_MPA_FINAL.gpkg"), layer = "SAC")
-st_geometry(shp_mpa_UK_3) <- "geometry"
-shp_mpa_UK_3 <- shp_mpa_UK_3 %>%
-  mutate(Source = "Sim_2025",
-         Country = NA,
-         Mainregion = NA,
-         Comment = "Based_on_all_human_activities") %>%
-  select(
-    Source,
-    Name        = name,
-    Country,
-    Mainregion,
-    Anchoring   = pl_anchori,
-    Aquaculture = pl_aquacul,
-    Infrastructure = pl_infrast,
-    Fishing     = pl_fishing,
-    Mining      = pl_mining,
-    Dredging    = pl_dredgin,
-    Nonextractive = pl_nonextr,
-    Protection_level_all = pl_overall,
-    Comment
-  ) %>%
-  st_make_valid() %>%
-  st_transform(crs_target_EU) %>%
-  st_cast("MULTIPOLYGON", warn = FALSE)
-
-shp_mpa_UK_4 <- st_read(paste0(data.dir,"/United_Kingdom/Figshare_GIS_UK_MPA_FINAL/Figshare_GIS_UK_MPA_FINAL/Figshare_UK_MPA_FINAL.gpkg"), layer = "SPA")
-st_geometry(shp_mpa_UK_4) <- "geometry"
-shp_mpa_UK_4 <- shp_mpa_UK_4 %>%
-  mutate(Source = "Sim_2025",
-         Comment = "Based_on_all_human_activities")%>%
-  select(
-    Source,
-    Name        = NAME,
-    Country     = country,
-    Mainregion = searegions,
-    Anchoring   = mpaguide_a,
-    Aquaculture = mpaguide_1,
-    Infrastructure = mpaguide_i,
-    Fishing     = mpaguide_f,
-    Mining      = mpaguide_m,
-    Dredging    = mpaguide_d,
-    Nonextractive = mpaguide_n,
-    Protection_level_all = mpaguide_o,
-    Comment
-  ) %>%
-  st_make_valid() %>%
-  st_transform(crs_target_EU) %>%
-  st_cast("MULTIPOLYGON", warn = FALSE)
-
-shp_mpa_UK_all <- bind_rows(shp_mpa_UK_1, shp_mpa_UK_2, shp_mpa_UK_3, shp_mpa_UK_4)
+shp_mpa_uk_all <- bind_rows(lapply(
+  uk_layers,
+  function(layer_cfg) {
+    read_uk_layer(
+      layer_name = layer_cfg$layer,
+      crs_target = crs_target_eu,
+      use_sac_schema = layer_cfg$use_sac_schema
+    )
+  }
+))
 
 # Iceland
-# all_shp_iceland <- list.files(
-#   path = paste0(data.dir,"/selected_OECMs_Iceland/"),
-#   pattern = "\\.shp$",
-#   full.names = TRUE)
+# Source: Francesco Ferretti (2025) Protection levels in Icelandic MPAs based on fishing restrictions.
+load("./Inputs/protection_Iceland_REVISED/protection_Iceland_REVISED.Rdata")
 
-load("~/Data/MPA_shp_BUSEFUL/protection_Iceland_REVISED/protection_Iceland_REVISED.Rdata")
-
-shp_mpa_Iceland_all <- d.protection4 %>%
+shp_mpa_iceland_all <- d.protection4 %>%
   mutate(
-    Source         = "Francesco_2025",
-    Country        = "Iceland",
-    Mainregion     = "Arctic waters",
-    Anchoring      = NA,
-    Aquaculture    = NA,
+    Source = "Francesco_2025",
+    Country = "Iceland",
+    Mainregion = "Arctic waters",
+    Anchoring = NA,
+    Aquaculture = NA,
     Infrastructure = NA,
-    Fishing        = "fully",
-    Mining         = NA,
-    Dredging       = NA,
-    Nonextractive  = NA,
+    Fishing = "fully",
+    Mining = NA,
+    Dredging = NA,
+    Nonextractive = NA,
     Protection_level_all = "fully",
-    Comment = "Based_on_fishing_restrictions_only") %>%
+    Comment = "Based_on_fishing_restrictions_only"
+  ) %>%
   select(
-    Source,
-    Name = Name,
-    Country,
-    Mainregion,
-    Anchoring,
-    Aquaculture,
-    Infrastructure,
-    Fishing,
-    Mining,
-    Dredging,
-    Nonextractive,
-    Protection_level_all,
-    Comment) %>%
-  st_make_valid() %>%
-  st_transform(crs_target_EU)
+    Source = .data$Source,
+    Name = .data$Name,
+    Country = .data$Country,
+    Mainregion = .data$Mainregion,
+    Anchoring = .data$Anchoring,
+    Aquaculture = .data$Aquaculture,
+    Infrastructure = .data$Infrastructure,
+    Fishing = .data$Fishing,
+    Mining = .data$Mining,
+    Dredging = .data$Dredging,
+    Nonextractive = .data$Nonextractive,
+    Protection_level_all = .data$Protection_level_all,
+    Comment = .data$Comment
+  ) %>%
+  finalize_geometry(
+    crs_target = crs_target_eu,
+    cast_multipolygon = FALSE,
+    drop_empty = FALSE
+  )
 
-# shp_list_iceland <- lapply(all_shp_iceland, function(f) {
-#   st_read(f, quiet = TRUE) %>%
-#     mutate(
-#       Protection_level_all = recode(
-#         file_path_sans_ext(basename(f)),
-#         protection_lv1 = "fully",
-#         protection_lv2 = "highly",
-#         protection_lv3 = "lightly",
-#         protection_lv4 = "minimally"
-#       ),
-#       Source         = "Francesco_2025",
-#       Country        = "Iceland",
-#       Mainregion     = "Arctic waters",
-#       Anchoring      = NA,
-#       Aquaculture    = NA,
-#       Infrastructure = NA,
-#       Fishing        = Protection_level_all,
-#       Mining         = NA,
-#       Dredging       = NA,
-#       Nonextractive  = NA,
-#       Comment = "Based_on_fishing_restrictions_only"
-#     ) %>%
-#     select(
-#       Source,
-#       Name = Name,
-#       Country,
-#       Mainregion,
-#       Anchoring,
-#       Aquaculture,
-#       Infrastructure,
-#       Fishing,
-#       Mining,
-#       Dredging,
-#       Nonextractive,
-#       Protection_level_all,
-#       Comment) %>%
-#     st_make_valid() %>%
-#     st_transform(crs_target_EU)
-# })
-
-#shp_mpa_Iceland_all <- do.call(rbind, shp_list_iceland)
-
-# # Fisheries Restricted Areas
-# all_shp_FRA <- list.files(
-#   path = paste0(data.dir,"/FRAs/"),
-#   pattern = "\\.shp$",
-#   recursive = TRUE,
-#   full.names = TRUE)
-# 
-# shp_list_FRA <- lapply(all_shp_FRA, function(f) {
-#   st_read(f, quiet = TRUE) %>%
-#     mutate(
-#       Source         = "Walter_2025",
-#       Name           = basename(dirname(f)),
-#       Country        = NA,
-#       Mainregion     = "Mediterranean Sea",
-#       Anchoring      = NA,
-#       Aquaculture    = NA,
-#       Infrastructure = NA,
-#       Fishing        = "fully",
-#       Mining         = NA,
-#       Dredging       = NA,
-#       Nonextractive  = NA,
-#       Protection_level_all = "fully",
-#       Comment = "Based_on_FRA_restrictions_only"
-#     ) %>%
-#     select(
-#       Source,
-#       Name,
-#       Country,
-#       Mainregion,
-#       Anchoring,
-#       Aquaculture,
-#       Infrastructure,
-#       Fishing,
-#       Mining,
-#       Dredging,
-#       Nonextractive,
-#       Protection_level_all,
-#       Comment) %>%
-#     st_make_valid() %>%
-#     st_transform(crs_target_EU)
-# })
-# 
-# shp_mpa_FRA_all <- do.call(rbind, shp_list_FRA)
-
-
-# MPA Albania
-shp_mpa_Albania <- st_read(paste0(data.dir,"/Karaburun-Sazan Marine National Park_ALBANIA/WDPA_WDOECM_Jan2026_Public_555513696_shp-polygons.shp"), quiet = TRUE) %>%
+# Albania
+# Source: WDPA polygons, manually classified as lightly protected.
+shp_mpa_albania <- st_read(
+  "./Inputs/Karaburun-Sazan Marine National Park_ALBANIA/WDPA_WDOECM_Jan2026_Public_555513696_shp-polygons.shp",
+  quiet = TRUE
+) %>%
   mutate(
-    Source         = "Walter_2025",
-    Name           = "Karaburun-Sazan Marine National Park_ALBANIA",
-    Country        = "Albania",
-    Mainregion     = "Mediterranean Sea",
-    Anchoring      = NA,
-    Aquaculture    = NA,
+    Source = "Walter_2025",
+    Name = "Karaburun-Sazan Marine National Park_ALBANIA",
+    Country = "Albania",
+    Mainregion = "Mediterranean Sea",
+    Anchoring = NA,
+    Aquaculture = NA,
     Infrastructure = NA,
-    Fishing        = NA,
-    Mining         = NA,
-    Dredging       = NA,
-    Nonextractive  = NA,
+    Fishing = NA,
+    Mining = NA,
+    Dredging = NA,
+    Nonextractive = NA,
     Protection_level_all = "lightly",
     Comment = "Based_on_nothing"
   ) %>%
   select(
-    Source,
-    Name,
-    Country,
-    Mainregion,
-    Anchoring,
-    Aquaculture,
-    Infrastructure,
-    Fishing,
-    Mining,
-    Dredging,
-    Nonextractive,
-    Protection_level_all,
-    Comment) %>%
-  st_make_valid() %>%
-  st_transform(crs_target_EU)
+    Source = .data$Source,
+    Name = .data$Name,
+    Country = .data$Country,
+    Mainregion = .data$Mainregion,
+    Anchoring = .data$Anchoring,
+    Aquaculture = .data$Aquaculture,
+    Infrastructure = .data$Infrastructure,
+    Fishing = .data$Fishing,
+    Mining = .data$Mining,
+    Dredging = .data$Dredging,
+    Nonextractive = .data$Nonextractive,
+    Protection_level_all = .data$Protection_level_all,
+    Comment = .data$Comment
+  ) %>%
+  finalize_geometry(
+    crs_target = crs_target_eu,
+    cast_multipolygon = FALSE,
+    drop_empty = FALSE
+  )
 
-# MPA Greenland
-shp_mpa_Greenland <- st_read(paste0(data.dir,"/WDPA_WDOECM_Jan2026_Public_2065_shp_0/WDPA_WDOECM_Jan2026_Public_2065_shp-polygons.shp"), quiet = TRUE) %>%
+# Greenland
+# Source: WDPA polygons, currently unclassified for use-level assessment.
+shp_mpa_greenland <- st_read(
+  "./Inputs/WDPA_WDOECM_Jan2026_Public_2065_shp_0/WDPA_WDOECM_Jan2026_Public_2065_shp-polygons.shp",
+  quiet = TRUE
+) %>%
   mutate(
-    Source         = "Heino_2025",
-    Country        = "Greenland",
-    Mainregion     = "Arctic waters",
-    Anchoring      = NA,
-    Aquaculture    = NA,
+    Source = "Heino_2025",
+    Country = "Greenland",
+    Mainregion = "Arctic waters",
+    Anchoring = NA,
+    Aquaculture = NA,
     Infrastructure = NA,
-    Fishing        = NA,
-    Mining         = NA,
-    Dredging       = NA,
-    Nonextractive  = NA,
+    Fishing = NA,
+    Mining = NA,
+    Dredging = NA,
+    Nonextractive = NA,
     Protection_level_all = "unclassified",
     Comment = "Based_on_nothing"
   ) %>%
   select(
-    Source,
-    Name = NAME,
-    Country,
-    Mainregion,
-    Anchoring,
-    Aquaculture,
-    Infrastructure,
-    Fishing,
-    Mining,
-    Dredging,
-    Nonextractive,
-    Protection_level_all,
-    Comment) %>%
-  st_make_valid() %>%
-  st_transform(crs_target_EU)
+    Source = .data$Source,
+    Name = .data$NAME,
+    Country = .data$Country,
+    Mainregion = .data$Mainregion,
+    Anchoring = .data$Anchoring,
+    Aquaculture = .data$Aquaculture,
+    Infrastructure = .data$Infrastructure,
+    Fishing = .data$Fishing,
+    Mining = .data$Mining,
+    Dredging = .data$Dredging,
+    Nonextractive = .data$Nonextractive,
+    Protection_level_all = .data$Protection_level_all,
+    Comment = .data$Comment
+  ) %>%
+  finalize_geometry(
+    crs_target = crs_target_eu,
+    cast_multipolygon = FALSE,
+    drop_empty = FALSE
+  )
 
-####
-# Bind all shapefiles
-shp_mpa_all <- bind_rows(shp_mpa_EU_all, shp_mpa_UK_all, shp_mpa_Iceland_all, shp_mpa_Greenland, shp_mpa_Albania) # shp_mpa_FRA_all
+### ------------------------------------------------------------------------
+### 4) Merge all sources and export
+### ------------------------------------------------------------------------
+
+shp_mpa_all <- bind_rows(
+  shp_mpa_eu_all,
+  shp_mpa_uk_all,
+  shp_mpa_iceland_all,
+  shp_mpa_greenland,
+  shp_mpa_albania
+)
+
 shp_mpa_all$Protection_level_all <- factor(
   shp_mpa_all$Protection_level_all,
-  levels = c("unclassified", "incompatible", "minimally", "lightly", "highly", "fully"),
-  ordered = FALSE)
+  levels = protection_levels,
+  ordered = FALSE
+)
 
-mapview(shp_mpa_all, zcol = 'Protection_level_all')
-
-save(shp_mpa_all, file = "shp_mpa_europe_all.rda")
+save(shp_mpa_all, file = output_rda_path)
