@@ -1,0 +1,5 @@
+# Ignore all input data files and folders
+*
+
+# Keep this file tracked
+!.gitignore
