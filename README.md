@@ -59,7 +59,7 @@ The project combines source data from EU, UK, Iceland, and WDPA-derived layers, 
 ## Repository Structure ![folders](https://img.shields.io/badge/-folders-3949ab?style=flat-square)
 - [0_Download_Inputs_Outputs_from_Zenodo.R](0_Download_Inputs_Outputs_from_Zenodo.R): Download/unzip `Inputs.zip` and `Outputs.zip` from Zenodo.
 - [1_Merge_MPA_shapefiles.R](1_Merge_MPA_shapefiles.R): Standardize and merge source MPA datasets.
-- [2_Intersect_MPA_polygons.r](2_Intersect_MPA_polygons.r): Priority-based de-overlap, marine clipping, and export (sources `safe_intersection.r`).
+- [2_Intersect_MPA_polygons.r](2_Intersect_MPA_polygons.r): Priority-based de-overlap, marine clipping, and export.
 - [safe_intersection.r](safe_intersection.r): Safe geometry intersection utility with repair fallback, called from script 2.
 - [Inputs/](Inputs/): Source spatial data (typically git-ignored in local workflows).
 - [Outputs/](Outputs/): Generated products and exported shapefiles.
