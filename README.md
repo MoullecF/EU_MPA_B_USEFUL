@@ -1,7 +1,7 @@
 # Marine Protected Area Shapefiles - EU and non-EU MPAs
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18701898.svg)](https://doi.org/10.5281/zenodo.18701898) [![Data: CC BY 4.0](https://img.shields.io/badge/Data%20License-CC%20BY%204.0-brightgreen.svg)](https://creativecommons.org/licenses/by/4.0/)
 
-Open-science R workflow to harmonize and merge multiple MPA datasets, resolve overlapping protection polygons by priority, and generate regional marine-only shapefiles for EU and non-EU waters.
+R workflow to harmonize and merge multiple MPA datasets, resolve overlapping protection polygons by priority, and generate regional marine-only shapefiles for EU and non-EU waters.
 
 The project combines source data from EU, UK, Iceland, and WDPA-derived layers, then outputs cleaned, de-overlapped MPA polygons for key regions (Mediterranean, Baltic, Black Sea, and NE Atlantic including UK).
 
@@ -14,8 +14,7 @@ The project combines source data from EU, UK, Iceland, and WDPA-derived layers, 
 ## Methods and Workflow ![workflow](https://img.shields.io/badge/-workflow-00695c?style=flat-square)
 1. **Download published data bundle** from Zenodo ([0_Download_Inputs_Outputs_from_Zenodo.R](0_Download_Inputs_Outputs_from_Zenodo.R)).
 2. **Merge and standardize source MPAs** (EU, UK, Iceland, Albania, Greenland) into one layer ([1_Merge_MPA_shapefiles.R](1_Merge_MPA_shapefiles.R)).
-3. **Intersect and de-overlap by protection priority** using robust geometry rebuild and masking ([2_Intersect_MPA_polygons.r](2_Intersect_MPA_polygons.r)).
-4. **Clip to marine domain** with a safe intersection helper ([safe_intersection.r](safe_intersection.r)).
+3. **Intersect, de-overlap, and marine-clip by protection priority** using robust geometry rebuild, masking, and the safe intersection helper sourced within [2_Intersect_MPA_polygons.r](2_Intersect_MPA_polygons.r) (helper: [safe_intersection.r](safe_intersection.r)).
 5. **Export shapefile + zip archive** for the selected region (configured in `export_name` inside script 2).
 
 ## Inputs and Data ![data](https://img.shields.io/badge/-data-283593?style=flat-square)
@@ -39,7 +38,7 @@ The project combines source data from EU, UK, Iceland, and WDPA-derived layers, 
   - `Outputs/shp_mpa_NE_Atlantic_incl_UK`
 
 ## Installation and Environment ![setup](https://img.shields.io/badge/-setup-546e7a?style=flat-square)
-- **R version**: tested with R 4.2.x
+- **R version**: 4.2.2
 - **Core packages**: `sf`, `dplyr`, `lwgeom`, `readxl`, `zenodor`
 - **Zenodo helper package**: [0_Download_Inputs_Outputs_from_Zenodo.R](0_Download_Inputs_Outputs_from_Zenodo.R) auto-installs `zenodor` from GitHub (`FRBCesab/zenodor`) if missing.
 
@@ -54,15 +53,14 @@ The project combines source data from EU, UK, Iceland, and WDPA-derived layers, 
    ```
 3. Generate one regional de-overlapped output (configure region + `export_name` in script):
    ```r
-   source("safe_intersection.r")
    source("2_Intersect_MPA_polygons.r")
    ```
 
 ## Repository Structure ![folders](https://img.shields.io/badge/-folders-3949ab?style=flat-square)
 - [0_Download_Inputs_Outputs_from_Zenodo.R](0_Download_Inputs_Outputs_from_Zenodo.R): Download/unzip `Inputs.zip` and `Outputs.zip` from Zenodo.
 - [1_Merge_MPA_shapefiles.R](1_Merge_MPA_shapefiles.R): Standardize and merge source MPA datasets.
-- [2_Intersect_MPA_polygons.r](2_Intersect_MPA_polygons.r): Priority-based de-overlap, marine clipping, and export.
-- [safe_intersection.r](safe_intersection.r): Safe geometry intersection utility with repair fallback.
+- [2_Intersect_MPA_polygons.r](2_Intersect_MPA_polygons.r): Priority-based de-overlap, marine clipping, and export (sources `safe_intersection.r`).
+- [safe_intersection.r](safe_intersection.r): Safe geometry intersection utility with repair fallback, called from script 2.
 - [Inputs/](Inputs/): Source spatial data (typically git-ignored in local workflows).
 - [Outputs/](Outputs/): Generated products and exported shapefiles.
 
