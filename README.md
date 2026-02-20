@@ -20,6 +20,8 @@ Outputs will be used in WP4 of the [B-USEFUL project](https://b-useful.eu/) to a
 4. **Export shapefile + zip archive** for the selected region (configured in `export_name` inside script 2).
 5. **Generate figure outputs** (map + circular proportion panel) with [3_Multipanel_map_Protection_level_surface.R](3_Multipanel_map_Protection_level_surface.R).
 
+**Note:** If you download `Outputs.zip` from Zenodo, you can run script 3 directly to generate figures. In that case, scripts 1 and 2 do not need to be run.
+
 ## Inputs and Data ![data](https://img.shields.io/badge/-data-283593?style=flat-square)
 - **Zenodo record**: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18701898.svg)](https://doi.org/10.5281/zenodo.18701898)
 - **Published archives**:
@@ -66,6 +68,8 @@ Outputs will be used in WP4 of the [B-USEFUL project](https://b-useful.eu/) to a
   ```r
   source("3_Multipanel_map_Protection_level_surface.R")
   ```
+
+If `Outputs/` comes from the Zenodo archive and already contains the required regional shapefiles, you can skip steps 2 and 3 and run only step 4 for figure generation.
 
 ## Repository Structure ![folders](https://img.shields.io/badge/-folders-3949ab?style=flat-square)
 - [0_Download_Inputs_Outputs_from_Zenodo.R](0_Download_Inputs_Outputs_from_Zenodo.R): Download/unzip `Inputs.zip` and `Outputs.zip` from Zenodo.
