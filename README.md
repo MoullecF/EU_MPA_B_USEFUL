@@ -65,7 +65,7 @@ Outputs will be used in WP4 of the [B-USEFUL project](https://b-useful.eu/) to a
    source("2_Intersect_MPA_polygons.r")
    ```
 4. Generate the combined map + circular proportion figure:
-   ```r
+  ```r
   source("3_Multipanel_map_Protection_level_surface.R")
   ```
 
