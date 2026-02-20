@@ -41,7 +41,7 @@ Outputs will be used in WP4 of the [B-USEFUL project](https://b-useful.eu/) to a
   - `Outputs/shp_mpa_NE_Atlantic_incl_UK`
 
 ## Figures ![figures](https://img.shields.io/badge/-figures-8e24aa?style=flat-square)
-- Figure outputs are saved in a separate `Figures/` folder (script 3), including:
+- Figure outputs are saved in a separate `Figures/` folder, including:
   - `Figures/Map_multipanel_Protection_level_all_with_circular_proportion.png`
 
 ## Installation and Environment ![setup](https://img.shields.io/badge/-setup-546e7a?style=flat-square)
@@ -81,7 +81,7 @@ Outputs will be used in WP4 of the [B-USEFUL project](https://b-useful.eu/) to a
 If you use this code or dataset, please cite:
 - **Dataset**: Moullec, F. (2026). *Marine Protected Area Shapefiles - EU and non-EU MPAs* (Version V1.0.0) [Data set]. Zenodo. [https://doi.org/10.5281/zenodo.18701898](https://doi.org/10.5281/zenodo.18701898)
 - **Code**: This GitHub repository (MoullecF/EU_MPA_B_USEFUL).
+- **B-USEFUL Deliverable 4.3**: ADD WEB LINK of the report.
 
 ## License ![license](https://img.shields.io/badge/-license-263238?style=flat-square)
 - **Data license**: Creative Commons Attribution 4.0 International (CC BY 4.0), as provided on Zenodo.
-- **Code license**: no repository-level code license file is currently present. Add a `LICENSE` file if you want to define explicit code reuse terms.
