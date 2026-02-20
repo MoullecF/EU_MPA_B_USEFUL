@@ -5,6 +5,8 @@ R workflow to harmonize and merge multiple MPA datasets, resolve overlapping pro
 
 The project combines source data from EU, UK, Iceland, and WDPA-derived layers, then outputs cleaned, de-overlapped MPA polygons for key regions (Mediterranean, Baltic, Black Sea, and NE Atlantic including UK).
 
+Outputs will be used in WP4 of the [B-USEFUL project](https://b-useful.eu/) to assess the spatial match or mismatch between biodiversity hotspots and current marine protection in Europe, and its implications for biodiversity management.
+
 ## Purpose ![target](https://img.shields.io/badge/-purpose-37474f?style=flat-square)
 - Harmonize heterogeneous MPA attributes into a single schema.
 - Merge and validate polygon geometries across source datasets.
@@ -15,7 +17,8 @@ The project combines source data from EU, UK, Iceland, and WDPA-derived layers, 
 1. **Download published data bundle** from Zenodo ([0_Download_Inputs_Outputs_from_Zenodo.R](0_Download_Inputs_Outputs_from_Zenodo.R)).
 2. **Merge and standardize source MPAs** (EU, UK, Iceland, Albania, Greenland) into one layer ([1_Merge_MPA_shapefiles.R](1_Merge_MPA_shapefiles.R)).
 3. **Intersect, de-overlap, and marine-clip by protection priority** using robust geometry rebuild, masking, and the safe intersection helper sourced within [2_Intersect_MPA_polygons.r](2_Intersect_MPA_polygons.r) (helper: [safe_intersection.r](safe_intersection.r)).
-5. **Export shapefile + zip archive** for the selected region (configured in `export_name` inside script 2).
+4. **Export shapefile + zip archive** for the selected region (configured in `export_name` inside script 2).
+5. **Generate figure outputs** (map + circular proportion panel) with [3_Multipanel_map_Protection_level_surface.R](3_Multipanel_map_Protection_level_surface.R).
 
 ## Inputs and Data ![data](https://img.shields.io/badge/-data-283593?style=flat-square)
 - **Zenodo record**: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18701898.svg)](https://doi.org/10.5281/zenodo.18701898)
@@ -37,9 +40,13 @@ The project combines source data from EU, UK, Iceland, and WDPA-derived layers, 
   - `Outputs/shp_mpa_baltic_sea`
   - `Outputs/shp_mpa_NE_Atlantic_incl_UK`
 
+## Figures ![figures](https://img.shields.io/badge/-figures-8e24aa?style=flat-square)
+- Figure outputs are saved in a separate `Figures/` folder (script 3), including:
+  - `Figures/Map_multipanel_Protection_level_all_with_circular_proportion.png`
+
 ## Installation and Environment ![setup](https://img.shields.io/badge/-setup-546e7a?style=flat-square)
 - **R version**: 4.2.2
-- **Core packages**: `sf`, `dplyr`, `lwgeom`, `readxl`, `zenodor`
+- **Core packages**: `sf`, `dplyr`, `lwgeom`, `readxl`, `zenodor`, `ggplot2`, `patchwork`, `rnaturalearth`
 - **Zenodo helper package**: [0_Download_Inputs_Outputs_from_Zenodo.R](0_Download_Inputs_Outputs_from_Zenodo.R) auto-installs `zenodor` from GitHub (`FRBCesab/zenodor`) if missing.
 
 ## Basic Usage ![run](https://img.shields.io/badge/-run-1b5e20?style=flat-square)
@@ -55,14 +62,20 @@ The project combines source data from EU, UK, Iceland, and WDPA-derived layers, 
    ```r
    source("2_Intersect_MPA_polygons.r")
    ```
+4. Generate the combined map + circular proportion figure:
+  ```r
+  source("3_Multipanel_map_Protection_level_surface.R")
+  ```
 
 ## Repository Structure ![folders](https://img.shields.io/badge/-folders-3949ab?style=flat-square)
 - [0_Download_Inputs_Outputs_from_Zenodo.R](0_Download_Inputs_Outputs_from_Zenodo.R): Download/unzip `Inputs.zip` and `Outputs.zip` from Zenodo.
 - [1_Merge_MPA_shapefiles.R](1_Merge_MPA_shapefiles.R): Standardize and merge source MPA datasets.
 - [2_Intersect_MPA_polygons.r](2_Intersect_MPA_polygons.r): Priority-based de-overlap, marine clipping, and export.
+- [3_Multipanel_map_Protection_level_surface.R](3_Multipanel_map_Protection_level_surface.R): Generates the Europe map and combined map + circular protection-surface proportion figure.
 - [safe_intersection.r](safe_intersection.r): Safe geometry intersection utility with repair fallback, called from script 2.
 - [Inputs/](Inputs/): Source spatial data (typically git-ignored in local workflows).
 - [Outputs/](Outputs/): Generated products and exported shapefiles.
+- [Figures/](Figures/): Saved plot outputs (maps and summary figures from script 3).
 
 ## Citation ![cite](https://img.shields.io/badge/-cite-4e342e?style=flat-square)
 If you use this code or dataset, please cite:
