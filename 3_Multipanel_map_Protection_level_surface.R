@@ -50,6 +50,9 @@ protection_palette <- c(
 
 output_png <- "./Figures/Map_multipanel_Protection_level_all.png"
 output_pdf <- "./Figures/Map_multipanel_Protection_level_all.pdf"
+a4_width_in <- 11.69
+a4_height_in <- 8.27
+output_dpi <- 1000
 
 ### ------------------------------------------------------------------------
 ### 3) Helpers
@@ -100,9 +103,8 @@ mpa_maps <- mpa_maps %>%
     Area = factor(Area, levels = unname(area_labels))
   )
 
-# Add land polygons to provide continent context in each panel.
+
 continents <- rnaturalearth::ne_countries(scale = "large", returnclass = "sf") %>%
-  sf::st_make_valid() %>%
   sf::st_transform(sf::st_crs(mpa_maps))
 
 ### ------------------------------------------------------------------------
@@ -110,7 +112,7 @@ continents <- rnaturalearth::ne_countries(scale = "large", returnclass = "sf") %
 ### ------------------------------------------------------------------------
 
 p_all <- ggplot() +
-    geom_sf(
+  geom_sf(
     data = mpa_maps,
     aes(fill = Protection_level_all),
     color = NA,
@@ -144,12 +146,15 @@ p_all <- ggplot() +
     panel.border = element_rect(colour = "black", fill = NA, linewidth = 1),
     panel.background = element_rect(fill = "white"),
     plot.background = element_rect(fill = "white", colour = NA),
-    axis.text = element_text(size = 7),
-    #axis.title = element_text(size = 9),
+    legend.position = "bottom",
+    legend.direction = "horizontal",
+    legend.title.position = "top",
+    legend.box = "horizontal",
+    axis.text = element_text(size = 10),
     axis.title = element_blank(),
-    plot.title = element_text(face = "bold", size = 8, hjust = 0.5),
+    plot.title = element_text(face = "bold", size = 10, hjust = 0.5),
     legend.title = element_text(size = 10),
-    legend.text = element_text(size = 9),
+    legend.text = element_text(size = 10),
     legend.key = element_rect(color = "white"),
     plot.margin = unit(c(0, 0, 0, 0), "pt")
   )
@@ -178,48 +183,6 @@ area_summary <- all_levels %>%
     Protection_level_all = factor(Protection_level_all, levels = protection_levels, ordered = TRUE)
   )
 
-# p_area_proportion <- ggplot(
-#   area_summary,
-#   aes(x = "", y = proportion, fill = Protection_level_all)
-# ) +
-#   geom_col(
-#     width = 0.55,
-#     color = "white",
-#     linewidth = 0.2,
-#     position = position_stack(reverse = TRUE)
-#   ) +
-#   scale_fill_manual(
-#     values = protection_palette,
-#     breaks = protection_levels,
-#     labels = tools::toTitleCase(protection_levels),
-#     name = "Protection level",
-#     guide = "none"
-#   ) +
-#   scale_y_continuous(
-#     labels = scales::percent_format(accuracy = 1),
-#     expand = expansion(mult = c(0, 0.02))
-#   ) +
-#     scale_x_discrete(expand = c(0, 0)) +
-#   labs(
-#     x = NULL,
-#     y = "Proportion of total MPA surface by protection level",
-#   ) +
-#   theme(
-#   legend.position = "right",
-#   axis.title.x = element_text(face = "bold", size = 14),
-#   axis.text.x  = element_text(vjust = 0.5, size = 12, colour = "black"),
-#   axis.title.y = element_text(face = "bold", size = 14),
-#   axis.text.y  = element_text(vjust = 0.5, size = 12, colour = "black"),
-#   panel.grid.major.x = element_blank(),
-#   panel.grid.minor.x = element_blank(),
-#   panel.grid.minor.y = element_blank(),
-#   panel.grid.major.y = element_blank(),
-#   panel.background = element_blank(),
-#   axis.line = element_line(colour = "black"),
-#   plot.title = element_text(color = "black", size = 14, face = "bold", hjust = 0.5),
-#   plot.margin = unit(c(0, 0, 0, 0), "cm")
-# )
-
 p_area_proportion_circular <- ggplot(
   area_summary,
   aes(x = 2, y = proportion, fill = Protection_level_all)
@@ -233,7 +196,7 @@ p_area_proportion_circular <- ggplot(
   geom_text(
     aes(x = 2, label = ifelse(proportion >= 0.01, scales::percent(proportion, accuracy = 0.1), "")),
     position = position_stack(vjust = 0.5, reverse = TRUE),
-    size = 2,
+    size = 1.5,
     color = "black"
   ) +
   xlim(0.5, 2.5) +
@@ -245,27 +208,30 @@ p_area_proportion_circular <- ggplot(
     name = "Protection level",
     guide = "none"
   ) +
-  labs(title = "Proportion of total MPA surface by protection level") +
+  labs(title = "Proportion of total MPA surface\nby protection level") +
   theme_void() +
   theme(
     legend.position = "none",
     legend.title = element_text(face = "bold", size = 12),
     legend.text = element_text(size = 10),
     plot.title = element_text(face = "bold", size = 8, hjust = 0.5),
-    plot.margin = unit(c(0, 0, 0, 0), "cm")
+    panel.background = element_rect(fill = "white", colour = NA),
+    plot.background = element_rect(fill = "white", colour = NA),
+    plot.margin = margin(0, 0, 0, 0, unit = "pt")
   )
 
 # Combine map and circular plot into a multipanel figure.
-p <- p_all + p_area_proportion_circular +
-  plot_layout(guides = "collect", axis_titles = "collect") &
-  theme(
-    legend.position = "bottom",
-    legend.direction = "horizontal",
-    legend.title.position = "top",
-    legend.box = "horizontal",
-    legend.margin = margin(),
-    plot.background = element_rect(fill = "white", colour = NA),
-    plot.margin = margin(t = 3, r = 0, b = 0, l = 0, unit = "pt")
+# Place the circular proportion plot inside the map (middle-right).
+p <- p_all +
+  patchwork::inset_element(
+    p_area_proportion_circular,
+    left = 0.705,
+    bottom = 0.25,
+    right = 1.03,
+    top = 0.60,
+    align_to = "panel",
+    on_top = TRUE,
+    clip = FALSE
   )
 
 ### ------------------------------------------------------------------------
@@ -303,8 +269,9 @@ output_combined_map_circular_png <- "./Figures/Map_multipanel_Protection_level_a
 ggsave(
   filename = output_combined_map_circular_png,
   plot = p,
-  width = 7,
-  height = 6,
-  dpi = 600,
+  width = a4_width_in,
+  height = a4_height_in,
+  units = "in",
+  dpi = output_dpi,
   bg = "white"
 )
