@@ -111,6 +111,10 @@ continents <- rnaturalearth::ne_countries(scale = "large", returnclass = "sf") %
 ### 5) Plot map
 ### ------------------------------------------------------------------------
 
+# work without Greenland
+mpa_maps <- mpa_maps %>%
+  filter(Country != "Greenland")
+
 p_all <- ggplot() +
   geom_sf(
     data = mpa_maps,
@@ -240,7 +244,8 @@ p <- p_all +
 
 #output_bar_png <- "./Figures/Stacked_barplot_Protection_level_surface_proportion.png"
 #output_circular_png <- "./Figures/Circular_plot_Protection_level_surface_proportion.png"
-output_combined_map_circular_png <- "./Figures/Map_multipanel_Protection_level_all_with_circular_proportion.png"
+#output_combined_map_circular_png <- "./Figures/Map_multipanel_Protection_level_all_with_circular_proportion.png"
+output_combined_map_circular_png <- "./Figures/Map_multipanel_Protection_level_all_with_circular_proportion_no_greenland.png"
 
 #ggsave(
 #  filename = output_png,
