@@ -198,9 +198,9 @@ p_area_proportion_circular <- ggplot(
     position = position_stack(reverse = TRUE)
   ) +
   geom_text(
-    aes(x = 2, label = ifelse(proportion >= 0.01, scales::percent(proportion, accuracy = 0.1), "")),
+    aes(x = 2, label = ifelse(proportion >= 0.01, scales::percent(proportion, accuracy = 1), "")),
     position = position_stack(vjust = 0.5, reverse = TRUE),
-    size = 1.5,
+    size = 1.3,
     color = "black"
   ) +
   xlim(0.5, 2.5) +
